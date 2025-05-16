@@ -16,7 +16,7 @@ from pyvirtualdisplay import Display
 # pip install bs4 tqdm
 # pip install selenium webdriver_manager pyvirtualdisplay bs4 tqdm
 # sudo apt-get install xvfb xserver-xephyr
-# pip install selenium webdriver_manager bs4 tqdm pyvirtualdisplay wcwidth pycryptodome keyrings.cryptfile keyring
+
 
 def get_display(visible):
     if visible:
@@ -42,6 +42,7 @@ def main(visible):
     start_year = int(default_input('Start year', year - 10))
     end_year = int(default_input('End year', year))
     names = dict()
+    total = 0
     with display:
         with webdriver.Chrome(service=Service(ChromeDriverManager().install())) as driver:
             for i in range(start_year, end_year + 1):
@@ -59,13 +60,15 @@ def main(visible):
                 for cell in cells:
                     name = cell.select('td')[1].text
                     num = int(cell.select('td')[2].text.replace(',', ''))
+                    total += num
                     if name in names.keys():
                         names[name] += num
                     else:
                         names[name] = num
     sorted_names = sorted(names.items(), key=lambda x: x[1], reverse=True)
-    for name, num in sorted_names:
-        print(f'{name}:\t{num:>6,}')
+    for i, (name, num) in enumerate(sorted_names, start=1):
+        print(f'{i} | {name}:\t{num:>6,}\t{num / total:.2%}')
+    print(f'Total: {total:,}')
 
 
 if __name__ == "__main__":
