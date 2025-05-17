@@ -68,12 +68,24 @@ def main(visible):
                         else:
                             names[name] = num
     sorted_names = sorted(names.items(), key=lambda x: x[1], reverse=True)
+    max_num = len(f'{sorted_names[0][1]:,}')
+    max_num = 5 if max_num < 5 else max_num
+    output = f'| rank | name | {"count":>{max_num}} | percent |'
+    print(output)
+    with open(f'{mode}_{start_year}_{end_year}.listing', 'w') as f:
+        f.write(output + '\n')
     for i, (name, num) in enumerate(sorted_names, start=1):
         if num < total // 1000:
             break
         len_name = 2 if len(name) == 2 else 3
-        print(f'| {i:>3} | {name:<{len_name}} | {num:>6,} | {num / total:.2%} |')
-    print(f'Total: {total:,}')
+        output = f'| {i:>4} | {name:<{len_name}} | {num:>{max_num},} | {num / total:>7.2%} |'
+        print(output)
+        with open(f'{mode}_{start_year}_{end_year}.listing', 'a') as f:
+            f.write(output + '\n')
+    output = f'Total: {total:,}'
+    print(output)
+    with open(f'{mode}_{start_year}_{end_year}.listing', 'a') as f:
+        f.write(output + '\n')
 
 
 if __name__ == "__main__":
