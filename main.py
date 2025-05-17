@@ -36,38 +36,43 @@ def default_input(name, default):
 
 def main(visible):
     year = datetime.datetime.now().date().year
+    display = get_display(visible)
     target_dir = './source'
     os.makedirs(target_dir, 493, True)
-    display = get_display(visible)
+    mode = default_input('Start mode (t, m, f)', 'f')
     start_year = int(default_input('Start year', year - 10))
     end_year = int(default_input('End year', year))
     names = dict()
     total = 0
     with display:
         with webdriver.Chrome(service=Service(ChromeDriverManager().install())) as driver:
-            for i in range(start_year, end_year + 1):
-                if os.path.exists(f'{target_dir}/{i}.html'):
-                    with open(f'{target_dir}/{i}.html', 'r') as f:
-                        html = f.read()
-                else:
-                    driver.get(f'https://www.namechart.kr/chart/{i}?gender=f')
-                    driver = wait_driver(driver)
-                    html = driver.page_source
-                    with open(f'{target_dir}/{i}.html', 'w') as f:
-                        f.write(html)
-                soup = BeautifulSoup(html, 'html.parser')
-                cells = soup.select('body > main > div > div > div > table > tbody > tr')
-                for cell in cells:
-                    name = cell.select('td')[1].text
-                    num = int(cell.select('td')[2].text.replace(',', ''))
-                    total += num
-                    if name in names.keys():
-                        names[name] += num
+            for tmp_year in range(start_year, end_year + 1):
+                for page in range(1, 51):
+                    if os.path.exists(f'{target_dir}/{tmp_year}_{mode}_{page}.html'):
+                        with open(f'{target_dir}/{tmp_year}_{mode}_{page}.html', 'r') as f:
+                            html = f.read()
                     else:
-                        names[name] = num
+                        driver.get(f'https://www.namechart.kr/chart/{tmp_year}?gender={mode}&page={page}')
+                        driver = wait_driver(driver)
+                        html = driver.page_source
+                        with open(f'{target_dir}/{tmp_year}_{mode}_{page}.html', 'w') as f:
+                            f.write(html)
+                    soup = BeautifulSoup(html, 'html.parser')
+                    cells = soup.select('body > main > div > div > div > table > tbody > tr')
+                    for cell in cells:
+                        name = cell.select('td')[1].text
+                        num = int(cell.select('td')[2].text.replace(',', ''))
+                        total += num
+                        if name in names.keys():
+                            names[name] += num
+                        else:
+                            names[name] = num
     sorted_names = sorted(names.items(), key=lambda x: x[1], reverse=True)
     for i, (name, num) in enumerate(sorted_names, start=1):
-        print(f'{i} | {name}:\t{num:>6,}\t{num / total:.2%}')
+        if num < total // 1000:
+            break
+        len_name = 2 if len(name) == 2 else 3
+        print(f'| {i:>3} | {name:<{len_name}} | {num:>6,} | {num / total:.2%} |')
     print(f'Total: {total:,}')
 
 
